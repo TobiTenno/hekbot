@@ -1,0 +1,11 @@
+{
+  "apps": [
+    {
+      "name": "hekbot",
+      "script": "main.js",
+      "env": {
+      	"TOKEN": "" // Bot token here
+      }
+    }
+  ]
+}
