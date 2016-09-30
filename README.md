@@ -11,7 +11,7 @@ Discord Vay Hek bot, inspired by the [Airhorn Bot](https://github.com/hammerandc
 ## Installation
 - Download using `git clone https://github.com/nspacestd/hekbot.git`.
 - `cd hekbot` and `npm install` to install the dependencies.
-- If you're using PM2, add the bot token to `pm2.json` and start with `pm2 pm2.json`, otherwise use `TOKEN=<YOUR-TOKEN-HERE> node main.js`.
+- If you're using PM2, add the bot token to `pm2.json` and start with `pm2 start pm2.json`, otherwise use `TOKEN=<YOUR-TOKEN-HERE> node main.js`.
 
 ## Configuration
 |Environment Variable | Description | Default |
