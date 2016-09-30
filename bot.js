@@ -62,6 +62,11 @@ class HekBot {
       return;
     }
 
+    if(message.channel.permissionsFor(this.client.user)
+      .hasPermission('MANAGE_MESSAGES')) {
+      message.delete(1000);
+    }
+
     if(!message.member.voiceChannel) {
       return message.reply('You need to be in a voice channel');
     }
