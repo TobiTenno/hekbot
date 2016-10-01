@@ -62,8 +62,7 @@ class HekBot {
       return;
     }
 
-    if(message.channel.permissionsFor(this.client.user)
-      .hasPermission('MANAGE_MESSAGES')) {
+    if(message.deletable) {
       message.delete(1000);
     }
 
