@@ -1,3 +1,4 @@
+'use strict';
 const HekBot = require('./bot.js');
 
 const prefix = process.env.PREFIX || '!'; 
