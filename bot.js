@@ -63,19 +63,20 @@ class HekBot {
       return;
     }
 
-    if(message.deletable) {
-      message.delete(1000);
-    }
-
-    if(!message.member.voiceChannel) {
-      return message.reply('You need to be in a voice channel');
-    }
-
     const collectionName = match[1];
     const soundName = match[2];
 
     if(!(collectionName in this.sounds)) {
       return;
+    }
+
+    if(message.deletable) {
+      message.delete(1000);
+    }
+
+    if(!message.member.voiceChannel) {
+      return message.reply('You need to be in a voice channel')
+        .then(msg => msg.delete(5000));
     }
 
     const collection = this.sounds[collectionName];
@@ -86,7 +87,8 @@ class HekBot {
       if(soundName in collection) {
         this.enqueuePlay(collection[soundName], message.member.voiceChannel);
       } else {
-        message.reply('Sound not found');
+        message.reply('Sound not found')
+          .then(msg => msg.delete(5000));
       }
     }
   }
