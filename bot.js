@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const Discord = require('discord.js');
 
-class HekBot {
+class SoundBot {
   constructor(prefix, token, soundPath, maxQueueSize) {
     this.prefix = prefix;
     this.token = token;
@@ -48,7 +48,7 @@ class HekBot {
     if(!guild.available) {
       return;
     }
-    guild.defaultChannel.sendMessage('**HEKBOT READY. TYPE ' +
+    guild.defaultChannel.sendMessage(`**${this.client.user.username.toUpperCase()} READY. TYPE ` +
                                      `\`${this.prefix}HELP\` FOR HELP**`);
   }
 
@@ -172,4 +172,4 @@ function playSound(sound, connection) {
   });
 }
 
-module.exports = HekBot;
+module.exports = SoundBot;
