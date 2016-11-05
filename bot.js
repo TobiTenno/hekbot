@@ -54,7 +54,7 @@ class SoundBot {
 
   onMessage(message) {
     if(this.helpRegexp.test(message.content)) {
-      return this.sendHelp(message.channel);
+      return this.sendHelp(message.author, message);
     }
 
     const match = message.content.match(this.soundRegexp);
@@ -93,7 +93,7 @@ class SoundBot {
     }
   }
 
-  sendHelp(channel) {
+  sendHelp(user, message) {
     const commandList = Object.keys(this.sounds).map(collectionName => {
       const randomCommand = this.prefix + collectionName + '\n';
       const requestCommands = Object.keys(this.sounds[collectionName])
@@ -104,7 +104,8 @@ class SoundBot {
       return randomCommand + requestCommands;
     }).join('\n\n');
 
-    channel.sendMessage('Available sounds:\n```\n' + commandList + '```');
+    user.sendMessage('Available sounds:\n```\n' + commandList + '```')
+      .then(() => message.delete(5000));
   }
 
   enqueueRandom(collection, channel) {
