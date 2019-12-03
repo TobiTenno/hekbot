@@ -4,7 +4,10 @@
       "name": "hekbot",
       "script": "main.js",
       "env": {
-      	"TOKEN": "" // Bot token here
+      	"TOKEN": "BOT TOKEN HERE",
+        "PREFIX": "!",
+        "SOUND_FOLDER": "audio",
+        "MAX_QUEUE_SIZE": 10
       }
     }
   ]
