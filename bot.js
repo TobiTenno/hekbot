@@ -7,7 +7,13 @@ class SoundBot {
   constructor(prefix, token, soundPath, maxQueueSize) {
     this.prefix = prefix;
     this.token = token;
-    this.client = new Discord.Client();
+    this.client = new Discord.Client({ disabledEvents: [
+      'GUILD_CREATE', 'GUILD_DELETE', 'GUILD_UPDATE', 'GUILD_MEMBER_ADD', 'GUILD_MEMBER_REMOVE', 'GUILD_MEMBER_UPDATE',
+      'GUILD_MEMBERS_CHUNK', 'GUILD_INTEGRATIONS_UPDATE', 'GUILD_ROLE_CREATE', 'GUILD_ROLE_DELETE', 'GUILD_ROLE_UPDATE', 'GUILD_BAN_ADD',
+      'GUILD_BAN_REMOVE', 'GUILD_EMOJIS_UPDATE', 'CHANNEL_CREATE', 'CHANNEL_DELETE', 'CHANNEL_UPDATE', 'CHANNEL_PINS_UPDATE',
+      'MESSAGE_DELETE', 'MESSAGE_UPDATE', 'MESSAGE_DELETE_BULK', 'MESSAGE_REACTION_ADD', 'MESSAGE_REACTION_REMOVE',
+      'MESSAGE_REACTION_REMOVE_ALL', 'USER_UPDATE', 'USER_SETTINGS_UPDATE',
+      'PRESENCE_UPDATE', 'TYPING_START', 'WEBHOOKS_UPDATE' ] });
     this.soundPath = soundPath;
     this.maxQueueSize = maxQueueSize;
     this.sounds = {};
@@ -20,7 +26,6 @@ class SoundBot {
     this.createSoundList();
 
     this.client.on('ready', () => this.onReady());
-    this.client.on('guildCreate', (guild) => this.onGuildCreate(guild));
     this.client.on('message', (message) => this.onMessage(message));
   }
 
@@ -40,19 +45,16 @@ class SoundBot {
   }
 
   onReady() {
-    console.log('Bot ready!');
-    this.client.user.setStatus('online', `${this.prefix}help for help`);
+    console.info('Bot ready!');
+    this.client.user.setPresence({
+      activity: {
+        name: `${this.prefix}help for help`,
+      },
+      status: 'online',
+    }).catch(console.error);
   }
 
-  onGuildCreate(guild) {
-    if(!guild.available) {
-      return;
-    }
-    guild.defaultChannel.sendMessage(`**${this.client.user.username.toUpperCase()} READY. TYPE ` +
-                                     `\`${this.prefix}HELP\` FOR HELP**`);
-  }
-
-  onMessage(message) {
+  async onMessage(message) {
     if(this.helpRegexp.test(message.content)) {
       return this.sendHelp(message.author, message);
     }
@@ -71,41 +73,45 @@ class SoundBot {
     }
 
     if(message.deletable) {
-      message.delete(1000);
+      message.delete({ timeout: 1000, reason: 'auto' });
     }
 
-    if(!message.member.voiceChannel) {
-      return message.reply('You need to be in a voice channel')
-        .then(msg => msg.delete(5000));
+    if(!message.member.voice.channel) {
+      const msg = await message.reply('You need to be in a voice channel');
+      msg.delete({ timeout: 5000, reason: 'auto' });
+      return;
     }
 
     const collection = this.sounds[collectionName];
 
     if(!soundName) {
-      this.enqueueRandom(collection, message.member.voiceChannel);
+      this.enqueueRandom(collection, message.member.voice.channel);
+    } else if (soundName in collection) {
+      this.enqueuePlay(collection[soundName], message.member.voice.channel);
     } else {
-      if(soundName in collection) {
-        this.enqueuePlay(collection[soundName], message.member.voiceChannel);
-      } else {
-        message.reply('Sound not found')
-          .then(msg => msg.delete(5000));
-      }
+      const msg = await message.reply('Sound not found');
+      msg.delete({ timeout: 5000, reason: 'auto' });
+      return;
     }
   }
 
-  sendHelp(user, message) {
-    const commandList = Object.keys(this.sounds).map(collectionName => {
-      const randomCommand = this.prefix + collectionName + '\n';
-      const requestCommands = Object.keys(this.sounds[collectionName])
-        .map(soundName => {
-          return `  ${this.prefix}${collectionName} ${soundName}`;
-        }).join('\n');
-
-      return randomCommand + requestCommands;
-    }).join('\n\n');
-
-    user.sendMessage('Available sounds:\n```\n' + commandList + '```')
-      .then(() => message.delete(5000));
+  async sendHelp(user, message) {
+    const commandList = Object.keys(this.sounds)
+      .map(collectionName => ({
+        name: `${this.prefix}${collectionName}\n`,
+        value: Object.keys(this.sounds[collectionName])
+          .map(soundName => {
+            return `  ${this.prefix}${collectionName} ${soundName}`;
+          }).join('\n'),
+        inline: true,
+      }));
+    const embed = {
+      color: 0x00FFFF,
+      title: 'Available Sounds',
+      fields: commandList,
+    };
+    await user.send('', { embed });
+    message.delete({ timeout: 5000, reason: 'auto' });
   }
 
   enqueueRandom(collection, channel) {
@@ -126,11 +132,11 @@ class SoundBot {
     }
   }
 
-  playNext(guildID, connection) {
+  async playNext(guildID, connection) {
     const queue = this.guilds[guildID];
     if(!queue.length) {
       if(connection) {
-        setTimeout(() => connection.disconnect(), 500);
+        setTimeout(() => connection.disconnect(), 1000);
       }
       delete this.guilds[guildID];
       return;
@@ -138,38 +144,28 @@ class SoundBot {
     const next = queue.shift();
 
     if(connection && connection.channel.id === next.channel.id) {
-      playSound(next.sound, connection)
-        .then(() => this.playNext(guildID, connection));
+      await playSound(next.sound, connection);
+      await this.playNext(guildID, connection);
     } else {
-      next.channel.join()
-        .then(newConn => playSound(next.sound, newConn))
-        .then(newConn => this.playNext(guildID, newConn))
-        .catch(console.err);
+      const conn = await next.channel.join();
+      await playSound(next.sound, conn);
+      await this.playNext(guildID, conn);
     }
   }
-
 }
 
 function getSubDirectories(dir) {
-  return fs.readdirSync(dir).filter(file => {
-    return fs.statSync(path.join(dir, file)).isDirectory();
-  });
+  return fs.readdirSync(dir).filter(file => fs.statSync(path.join(dir, file)).isDirectory());
 }
 
 function getFiles(dir) {
-  return fs.readdirSync(dir).filter(file => {
-    return fs.statSync(path.join(dir, file)).isFile();
-  });
+  return fs.readdirSync(dir).filter(file => fs.statSync(path.join(dir, file)).isFile());
 }
 
 function playSound(sound, connection) {
   return new Promise((resolve) => {
-    setTimeout(() => {
-      connection.playConvertedStream(fs.createReadStream(sound))
-        .once('end', () => {
-          resolve(connection);
-        });
-    }, 250);
+    const dispatch = connection.play(fs.createReadStream(sound), { type: 'converted', volume: false });
+    dispatch.once('end', resolve);
   });
 }
 
