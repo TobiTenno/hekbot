@@ -1,9 +1,6 @@
 {
   "dependencies": {
     "discord.js": "github:discordjs/discord.js#1b1289b35e2f8cd21341351549e6ac52fd08cb34",
-    "erlpack": "github:discordapp/erlpack#5d0064f9e106841e1eead711a6451f99b0d289fd",
-    "ffmpeg-static": "^2.7.0",
-    "node-fetch": "^2.6.0",
     "node-opus": "^0.3.3"
   },
   "private": true
