@@ -6,13 +6,5 @@
     "node-fetch": "^2.6.0",
     "node-opus": "^0.3.3"
   },
-  "scripts": {
-    "start": "node main.js",
-    "lint": "npx eslint ./*.js"
-  },
-  "engines": {
-    "node": "=10.1.0",
-    "npm": "=6.0.1"
-  },
   "private": true
 }
